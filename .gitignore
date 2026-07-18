@@ -1,0 +1,94 @@
+# ---------------------------------------------
+# .NET / Visual Studio
+# ---------------------------------------------
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+build/
+bld/
+[Ll]og/
+[Ll]ogs/
+
+# Build results / publish
+[Pp]ublish/
+*.publishproj
+*.PublishSettings
+publish.settings
+
+# Visual Studio user-specific files
+.vs/
+*.user
+*.userosscache
+*.suo
+*.userprefs
+*.sln.docstates
+*.rsuser
+
+# Rider / JetBrains
+.idea/
+*.sln.iml
+
+# VS Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Build / restore artifacts
+project.lock.json
+project.fragment.lock.json
+artifacts/
+*.nuget.props
+*.nuget.targets
+msbuild.log
+msbuild.err
+msbuild.wrn
+
+# Test results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.trx
+*.coverage
+*.coveragexml
+coverage/
+TestResults/
+
+# ---------------------------------------------
+# WebView2 runtime data (generated at runtime)
+# ---------------------------------------------
+*.WebView2/
+**/EBWebView/
+
+# ---------------------------------------------
+# Misc / OS
+# ---------------------------------------------
+*.dll.config
+*.tmp
+*.temp
+*.bak
+*.cache
+*.log
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# NuGet packages folder (restored on build)
+packages/
+!packages/build/
+*.nupkg
+*.snupkg
+
+# ClickOnce / app packages
+*.appx
+*.appxbundle
+*.msix
+*.msixbundle
+AppPackages/

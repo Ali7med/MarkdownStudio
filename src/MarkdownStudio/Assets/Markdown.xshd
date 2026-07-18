@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SyntaxDefinition name="Markdown" xmlns="http://icsharpcode.net/sharpdevelop/syntaxdefinition/2008">
+
+  <!-- ألوان محايدة تُقرأ على الخلفية الفاتحة والداكنة -->
+  <Color name="Heading"     foreground="#4493F8" fontWeight="bold" />
+  <Color name="Bold"        fontWeight="bold" />
+  <Color name="Italic"      fontStyle="italic" />
+  <Color name="InlineCode"  foreground="#C9A26D" />
+  <Color name="CodeBlock"   foreground="#C9A26D" />
+  <Color name="Link"        foreground="#3FB950" />
+  <Color name="Image"       foreground="#DB6D28" />
+  <Color name="Quote"       foreground="#8B949E" fontStyle="italic" />
+  <Color name="ListMarker"  foreground="#F778BA" fontWeight="bold" />
+  <Color name="Rule"        foreground="#6E7681" />
+  <Color name="Html"        foreground="#8B949E" />
+
+  <RuleSet ignoreCase="false">
+
+    <!-- كتل الأكواد المسيّجة ``` ... ``` -->
+    <Span color="CodeBlock" multiline="true">
+      <Begin>^\s*```.*$</Begin>
+      <End>^\s*```\s*$</End>
+    </Span>
+
+    <!-- العناوين # .. ###### -->
+    <Rule color="Heading">^\#{1,6}[ \t].*$</Rule>
+
+    <!-- الاقتباسات > -->
+    <Rule color="Quote">^[ \t]*&gt;.*$</Rule>
+
+    <!-- الفواصل الأفقية (horizontal rules) -->
+    <Rule color="Rule">^[ \t]*(-{3,}|\*{3,}|_{3,})[ \t]*$</Rule>
+
+    <!-- علامات القوائم -->
+    <Rule color="ListMarker">^[ \t]*([-*+]|[0-9]+[.)])[ \t]</Rule>
+
+    <!-- الصور ![alt](url) -->
+    <Rule color="Image">!\[[^\]]*\]\([^)]*\)</Rule>
+
+    <!-- الروابط [text](url) -->
+    <Rule color="Link">\[[^\]]*\]\([^)]*\)</Rule>
+
+    <!-- الكود السطري `code` -->
+    <Span color="InlineCode">
+      <Begin>`</Begin>
+      <End>`</End>
+    </Span>
+
+    <!-- عريض **text** __text__ -->
+    <Span color="Bold">
+      <Begin>\*\*</Begin>
+      <End>\*\*</End>
+    </Span>
+    <Span color="Bold">
+      <Begin>__</Begin>
+      <End>__</End>
+    </Span>
+
+    <!-- مائل *text* _text_ -->
+    <Span color="Italic">
+      <Begin>(?&lt;![\*\w])\*(?![\*\s])</Begin>
+      <End>\*</End>
+    </Span>
+
+    <!-- وسوم HTML -->
+    <Span color="Html">
+      <Begin>&lt;</Begin>
+      <End>&gt;</End>
+    </Span>
+
+  </RuleSet>
+</SyntaxDefinition>

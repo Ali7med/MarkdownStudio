@@ -1,0 +1,18 @@
+<UserControl x:Class="MarkdownStudio.Controls.GoToLinePanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             HorizontalAlignment="Center" VerticalAlignment="Top"
+             Margin="0,8,0,0" Visibility="Collapsed">
+    <Border Background="{DynamicResource ApplicationBackgroundBrush}"
+            BorderBrush="{DynamicResource ControlElevationBorderBrush}"
+            BorderThickness="1" CornerRadius="8" Padding="8">
+        <StackPanel Orientation="Horizontal">
+            <ui:TextBox x:Name="LineBox" Width="180"
+                        PlaceholderText="اذهب إلى السطر…"
+                        KeyDown="OnKeyDown" />
+            <TextBlock x:Name="HintLabel" VerticalAlignment="Center"
+                       Margin="8,0,0,0" Opacity="0.7" FontSize="12" />
+        </StackPanel>
+    </Border>
+</UserControl>
