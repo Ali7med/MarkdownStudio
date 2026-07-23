@@ -13,10 +13,6 @@ namespace MarkdownStudio.Views;
 /// <summary>لوحة «ما الجديد»: تعرض سجل التغييرات كاملاً (الأحدث أولاً).</summary>
 public partial class WhatsNewWindow
 {
-    private static readonly Brush GreenBrush = Freeze("#3FB950");
-    private static readonly Brush BlueBrush = Freeze("#4493F8");
-    private static readonly Brush OrangeBrush = Freeze("#E8873B");
-
     public WhatsNewWindow(IChangelogService changelog)
     {
         InitializeComponent();
@@ -78,9 +74,9 @@ public partial class WhatsNewWindow
     {
         var (glyph, brush, key) = kind switch
         {
-            ChangelogSectionKind.New => ("", GreenBrush, "whatsNew.section.new"),
-            ChangelogSectionKind.Improved => ("", BlueBrush, "whatsNew.section.improved"),
-            _ => ("", OrangeBrush, "whatsNew.section.fixed"),
+            ChangelogSectionKind.New => ("", ThemeBrush("SystemFillColorSuccessBrush", "#3FB950"), "whatsNew.section.new"),
+            ChangelogSectionKind.Improved => ("", ThemeBrush("SystemFillColorAttentionBrush", "#4493F8"), "whatsNew.section.improved"),
+            _ => ("", ThemeBrush("SystemFillColorCautionBrush", "#E8873B"), "whatsNew.section.fixed"),
         };
 
         var stack = new StackPanel { Margin = new Thickness(0, 0, 0, 12) };
@@ -128,9 +124,11 @@ public partial class WhatsNewWindow
         return grid;
     }
 
-    private Brush AccentBrush() =>
-        TryFindResource("AccentTextFillColorPrimaryBrush") as Brush
-        ?? TryFindResource("SystemAccentColorPrimaryBrush") as Brush ?? BlueBrush;
+    private Brush AccentBrush() => ThemeBrush("AccentTextFillColorPrimaryBrush", "#4493F8");
+
+    /// <summary>يحلّ فرشاة الثيم بمفتاحها (متكيّفة مع الفاتح/الداكن)، مع احتياط لوني إن غاب المفتاح.</summary>
+    private Brush ThemeBrush(string key, string fallbackHex) =>
+        TryFindResource(key) as Brush ?? Freeze(fallbackHex);
 
     private Brush AccentTint() =>
         TryFindResource("AccentFillColorSecondaryBrush") as Brush
