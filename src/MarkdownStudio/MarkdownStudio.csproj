@@ -9,7 +9,15 @@
     <RootNamespace>MarkdownStudio</RootNamespace>
     <AssemblyName>MarkdownStudio</AssemblyName>
     <ApplicationIcon>Assets\appicon.ico</ApplicationIcon>
+    <!-- نقطة دخول مخصّصة: يجب أن يعمل خطاف Velopack (تثبيت/تحديث/حذف) قبل إقلاع WPF -->
+    <StartupObject>MarkdownStudio.Program</StartupObject>
   </PropertyGroup>
+
+  <!-- App.xaml كـ Page (بدل ApplicationDefinition) لأننا نوفّر Program.Main مخصّصاً -->
+  <ItemGroup>
+    <ApplicationDefinition Remove="App.xaml" />
+    <Page Include="App.xaml" />
+  </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="Assets\Markdown.xshd" />
@@ -17,8 +25,7 @@
     <EmbeddedResource Include="lang\*.json" />
     <Resource Include="Assets\appicon.ico" />
     <!-- نسخة قابلة للتحرير من اللغات بجانب التنفيذي (لإضافة لغات جديدة) -->
-    <Content Include="lang\*.json" Link="lang\%(Filename)%(Extension)"
-             CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="lang\*.json" Link="lang\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
@@ -30,6 +37,7 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.10" />
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4078.44" />
     <PackageReference Include="ReverseMarkdown" Version="6.1.0" />
+    <PackageReference Include="Velopack" Version="1.2.0" />
     <PackageReference Include="WPF-UI" Version="4.3.0" />
   </ItemGroup>
 

@@ -52,57 +52,92 @@
                 BorderThickness="0,0,0,1"
                 BorderBrush="{DynamicResource ControlElevationBorderBrush}">
           <StackPanel>
-            <StackPanel Orientation="Horizontal">
-                <ui:Button Appearance="Secondary" Icon="{ui:SymbolIcon DocumentAdd24}"
-                           Content="{loc:Loc toolbar.new}" Command="{Binding NewDocumentCommand}" Margin="0,0,6,0" />
-                <ui:Button Appearance="Secondary" Icon="{ui:SymbolIcon FolderOpen24}"
-                           Content="{loc:Loc toolbar.open}" Command="{Binding OpenCommand}" Margin="0,0,6,0" />
-                <ui:Button Appearance="Secondary" Icon="{ui:SymbolIcon FolderOpen24}"
-                           Content="{loc:Loc toolbar.openFolder}" Command="{Binding OpenFolderCommand}" Margin="0,0,6,0" />
-                <ui:DropDownButton Appearance="Secondary" Icon="{ui:SymbolIcon History24}"
-                                   Content="{loc:Loc toolbar.recent}" Margin="0,0,6,0">
-                    <ui:DropDownButton.Flyout>
-                        <ContextMenu ItemsSource="{Binding RecentFiles}"
-                                     DataContext="{Binding PlacementTarget.DataContext,
-                                                   RelativeSource={RelativeSource Self}}">
-                            <ContextMenu.ItemContainerStyle>
-                                <Style TargetType="MenuItem">
-                                    <Setter Property="Header" Value="{Binding}" />
-                                    <Setter Property="Command"
-                                            Value="{Binding DataContext.OpenRecentCommand,
-                                                    RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
-                                    <Setter Property="CommandParameter" Value="{Binding}" />
-                                </Style>
-                            </ContextMenu.ItemContainerStyle>
-                        </ContextMenu>
-                    </ui:DropDownButton.Flyout>
-                </ui:DropDownButton>
-                <ui:Button Appearance="Secondary" Icon="{ui:SymbolIcon Save24}"
-                           Content="{loc:Loc toolbar.save}" Command="{Binding SaveCommand}" Margin="0,0,6,0" />
-                <ui:Button Appearance="Secondary" Icon="{ui:SymbolIcon SaveEdit24}"
-                           Content="{loc:Loc toolbar.saveAs}" Command="{Binding SaveAsCommand}" Margin="0,0,6,0" />
-                <ui:DropDownButton Appearance="Secondary" Icon="{ui:SymbolIcon ArrowExportUp24}"
-                                   Content="{loc:Loc toolbar.export}" Margin="0,0,6,0">
-                    <ui:DropDownButton.Flyout>
-                        <ContextMenu DataContext="{Binding PlacementTarget.DataContext,
-                                                   RelativeSource={RelativeSource Self}}">
-                            <MenuItem Header="{loc:Loc export.html}" Command="{Binding ExportHtmlCommand}" />
-                            <MenuItem Header="{loc:Loc export.pdf}"  Click="OnExportPdf" />
-                            <MenuItem Header="{loc:Loc export.docx}" Command="{Binding ExportDocxCommand}" />
-                            <MenuItem Header="{loc:Loc export.txt}"  Command="{Binding ExportTextCommand}" />
-                        </ContextMenu>
-                    </ui:DropDownButton.Flyout>
-                </ui:DropDownButton>
-                <Separator Margin="6,4" />
-                <ui:Button Appearance="Secondary" Icon="{ui:SymbolIcon Eye24}"
-                           Content="{loc:Loc toolbar.focus}"
-                           Command="{Binding ToggleFocusModeCommand}" Margin="0,0,6,0" />
-                <ui:Button Appearance="Secondary" Icon="{ui:SymbolIcon BookOpen24}"
-                           Content="{loc:Loc toolbar.reading}"
-                           Command="{Binding ToggleReadingModeCommand}" Margin="0,0,6,0" />
-                <ToggleButton IsChecked="{Binding IsVisualMode}"
-                           Content="{loc:Loc toolbar.studio}"
-                           Padding="10,5" Margin="0,0,6,0" />
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+              </Grid.ColumnDefinitions>
+
+              <!-- يسار: إجراءات سياقية حسب الوضع (تنزلق أفقياً عند ضيق النافذة) -->
+              <ScrollViewer Grid.Column="0" HorizontalScrollBarVisibility="Auto"
+                            VerticalScrollBarVisibility="Disabled">
+                <StackPanel Orientation="Horizontal">
+                    <!-- مفتاح الوضع العام (بارز): تحرير ↔ عرض -->
+                    <ui:Button Appearance="Primary" Icon="{ui:SymbolIcon Edit24}"
+                               Content="{loc:Loc toolbar.edit}" Command="{Binding EnterEditorModeCommand}"
+                               Visibility="{Binding IsViewerMode, Converter={StaticResource BoolToVisibility}}"
+                               Margin="0,0,10,0" />
+                    <ui:Button Appearance="Secondary" Icon="{ui:SymbolIcon Eye24}"
+                               Content="{loc:Loc toolbar.view}" Command="{Binding EnterViewerModeCommand}"
+                               Visibility="{Binding IsEditorMode, Converter={StaticResource BoolToVisibility}}"
+                               Margin="0,0,10,0" />
+                    <Separator Margin="2,4" />
+
+                    <!-- إجراءات مشتركة بين الوضعين -->
+                    <ui:Button Appearance="Secondary" Icon="{ui:SymbolIcon DocumentAdd24}"
+                               Content="{loc:Loc toolbar.new}" Command="{Binding NewDocumentCommand}" Margin="6,0,6,0" />
+                    <ui:Button Appearance="Secondary" Icon="{ui:SymbolIcon FolderOpen24}"
+                               Content="{loc:Loc toolbar.open}" Command="{Binding OpenCommand}" Margin="0,0,6,0" />
+                    <ui:Button Appearance="Secondary" Icon="{ui:SymbolIcon FolderOpen24}"
+                               Content="{loc:Loc toolbar.openFolder}" Command="{Binding OpenFolderCommand}" Margin="0,0,6,0" />
+                    <ui:DropDownButton Appearance="Secondary" Icon="{ui:SymbolIcon History24}"
+                                       Content="{loc:Loc toolbar.recent}" Margin="0,0,6,0">
+                        <ui:DropDownButton.Flyout>
+                            <ContextMenu ItemsSource="{Binding RecentFiles}"
+                                         DataContext="{Binding PlacementTarget.DataContext,
+                                                       RelativeSource={RelativeSource Self}}">
+                                <ContextMenu.ItemContainerStyle>
+                                    <Style TargetType="MenuItem">
+                                        <Setter Property="Header" Value="{Binding}" />
+                                        <Setter Property="Command"
+                                                Value="{Binding DataContext.OpenRecentCommand,
+                                                        RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                        <Setter Property="CommandParameter" Value="{Binding}" />
+                                    </Style>
+                                </ContextMenu.ItemContainerStyle>
+                            </ContextMenu>
+                        </ui:DropDownButton.Flyout>
+                    </ui:DropDownButton>
+                    <ui:DropDownButton Appearance="Secondary" Icon="{ui:SymbolIcon ArrowExportUp24}"
+                                       Content="{loc:Loc toolbar.export}" Margin="0,0,6,0">
+                        <ui:DropDownButton.Flyout>
+                            <ContextMenu DataContext="{Binding PlacementTarget.DataContext,
+                                                       RelativeSource={RelativeSource Self}}">
+                                <MenuItem Header="{loc:Loc export.html}" Command="{Binding ExportHtmlCommand}" />
+                                <MenuItem Header="{loc:Loc export.pdf}"  Click="OnExportPdf" />
+                                <MenuItem Header="{loc:Loc export.docx}" Command="{Binding ExportDocxCommand}" />
+                                <MenuItem Header="{loc:Loc export.txt}"  Command="{Binding ExportTextCommand}" />
+                            </ContextMenu>
+                        </ui:DropDownButton.Flyout>
+                    </ui:DropDownButton>
+
+                    <!-- خاص بالعارض: إظهار/إخفاء المستكشف للتصفّح -->
+                    <ui:Button Appearance="Secondary" Icon="{ui:SymbolIcon Folder24}"
+                               Content="{loc:Loc toolbar.explorer}" Command="{Binding ToggleSidebarCommand}"
+                               Visibility="{Binding IsViewerMode, Converter={StaticResource BoolToVisibility}}"
+                               Margin="0,0,6,0" />
+
+                    <!-- خاص بالمحرّر: حفظ + لوحات + أوضاع -->
+                    <StackPanel Orientation="Horizontal"
+                                Visibility="{Binding IsEditorMode, Converter={StaticResource BoolToVisibility}}">
+                        <Separator Margin="2,4" />
+                        <ui:Button Appearance="Secondary" Icon="{ui:SymbolIcon Save24}"
+                                   Content="{loc:Loc toolbar.save}" Command="{Binding SaveCommand}" Margin="6,0,6,0" />
+                        <ui:Button Appearance="Secondary" Icon="{ui:SymbolIcon SaveEdit24}"
+                                   Content="{loc:Loc toolbar.saveAs}" Command="{Binding SaveAsCommand}" Margin="0,0,6,0" />
+                        <Separator Margin="2,4" />
+                        <ui:Button Appearance="Secondary" Icon="{ui:SymbolIcon Folder24}"
+                                   ToolTip="{loc:Loc toolbar.explorer}" Command="{Binding ToggleSidebarCommand}" Margin="6,0,6,0" />
+                        <ui:Button Appearance="Secondary" Icon="{ui:SymbolIcon Eye24}"
+                                   Content="{loc:Loc toolbar.focus}" Command="{Binding ToggleFocusModeCommand}" Margin="0,0,6,0" />
+                        <ToggleButton IsChecked="{Binding IsVisualMode}"
+                                   Content="{loc:Loc toolbar.studio}" Padding="10,5" Margin="0,0,6,0" />
+                    </StackPanel>
+                </StackPanel>
+              </ScrollViewer>
+
+              <!-- يمين: إجراءات عامة دائمة -->
+              <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="8,0,0,0">
                 <ui:DropDownButton x:Name="ThemeButton" Appearance="Secondary"
                            Icon="{ui:SymbolIcon Color24}" Content="{loc:Loc toolbar.theme}" Margin="0,0,6,0">
                     <ui:DropDownButton.Flyout>
@@ -117,7 +152,8 @@
                 </ui:DropDownButton>
                 <ui:Button Appearance="Secondary" Icon="{ui:SymbolIcon Sparkle24}"
                            Content="{loc:Loc toolbar.whatsNew}" Click="OnOpenWhatsNew" />
-            </StackPanel>
+              </StackPanel>
+            </Grid>
 
             <!-- شريط أدوات التحرير المرئي (يظهر في وضع الاستوديو) -->
             <Border x:Name="RichToolbar" Visibility="Collapsed" Margin="0,8,0,0"
@@ -464,14 +500,18 @@
                            Opacity="0.7" FontSize="14" Margin="0,6,0,26"
                            HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" />
 
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,28">
-                    <ui:Button Appearance="Primary" Icon="{ui:SymbolIcon DocumentAdd24}"
-                               Content="{loc:Loc welcome.newDoc}" Command="{Binding NewDocumentCommand}"
-                               Margin="0,0,10,0" MinWidth="150" />
-                    <ui:Button Appearance="Secondary" Icon="{ui:SymbolIcon FolderOpen24}"
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,16">
+                    <ui:Button Appearance="Primary" Icon="{ui:SymbolIcon FolderOpen24}"
                                Content="{loc:Loc welcome.openFile}" Command="{Binding OpenCommand}"
+                               Margin="0,0,10,0" MinWidth="150" />
+                    <ui:Button Appearance="Secondary" Icon="{ui:SymbolIcon DocumentAdd24}"
+                               Content="{loc:Loc welcome.newDoc}" Command="{Binding NewDocumentCommand}"
                                MinWidth="150" />
                 </StackPanel>
+
+                <ui:Button Appearance="Transparent" Icon="{ui:SymbolIcon Folder24}"
+                           HorizontalAlignment="Center" Margin="0,0,0,28"
+                           Content="{loc:Loc welcome.openFolder}" Command="{Binding OpenFolderCommand}" />
 
                 <TextBlock Text="{loc:Loc welcome.recent}" FontWeight="SemiBold" Opacity="0.8"
                            Margin="4,0,0,8"
@@ -502,6 +542,11 @@
                 <TextBlock Text="{loc:Loc welcome.dragHint}"
                            Opacity="0.5" FontSize="12" Margin="0,18,0,0"
                            HorizontalAlignment="Center" />
+
+                <ui:Button Appearance="Transparent" Icon="{ui:SymbolIcon Star24}"
+                           HorizontalAlignment="Center" Margin="0,14,0,0"
+                           Content="{loc:Loc welcome.setDefault}"
+                           Command="{Binding SetAsDefaultAppCommand}" />
             </StackPanel>
         </Grid>
 

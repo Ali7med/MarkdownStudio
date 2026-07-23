@@ -31,6 +31,7 @@ public partial class App : Application
                 services.AddSingleton<ProjectSearchService>();
                 services.AddSingleton<ISettingsService, SettingsService>();
                 services.AddSingleton<IChangelogService, ChangelogService>();
+                services.AddSingleton<IUpdateService, UpdateService>();
 
                 // ViewModels
                 services.AddSingleton<MainWindowViewModel>();

@@ -92,3 +92,7 @@ packages/
 *.msix
 *.msixbundle
 AppPackages/
+
+# Velopack / publish output (build artifacts)
+/publish/
+/Releases/

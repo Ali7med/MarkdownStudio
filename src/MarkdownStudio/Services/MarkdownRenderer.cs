@@ -33,13 +33,13 @@ public sealed class MarkdownRenderer : IMarkdownRenderer
         return doc[blockIndex].Line + 1;
     }
 
-    public string RenderDocument(string markdown, bool darkTheme, string? baseDirectory = null)
-        => Build(markdown, darkTheme, baseDirectory, editable: false);
+    public string RenderDocument(string markdown, bool darkTheme, string? baseDirectory = null, bool reading = false)
+        => Build(markdown, darkTheme, baseDirectory, editable: false, reading: reading);
 
     public string RenderEditable(string markdown, bool darkTheme, string? baseDirectory = null)
-        => Build(markdown, darkTheme, baseDirectory, editable: true);
+        => Build(markdown, darkTheme, baseDirectory, editable: true, reading: false);
 
-    private string Build(string markdown, bool darkTheme, string? baseDirectory, bool editable)
+    private string Build(string markdown, bool darkTheme, string? baseDirectory, bool editable, bool reading)
     {
         var body = RenderFragment(markdown);
         var css = darkTheme ? DarkCss : LightCss;
@@ -53,6 +53,7 @@ public sealed class MarkdownRenderer : IMarkdownRenderer
         sb.Append("<!DOCTYPE html><html><head><meta charset=\"utf-8\">");
         sb.Append(baseTag);
         sb.Append("<style>").Append(BaseCss).Append(css);
+        if (reading) sb.Append(ReadingCss);
         if (editable) sb.Append(EditableCss);
         sb.Append("</style>");
         sb.Append("</head><body><article class=\"markdown-body\"").Append(editAttr).Append('>');
@@ -91,6 +92,15 @@ public sealed class MarkdownRenderer : IMarkdownRenderer
         hr { border: none; border-top: 1px solid var(--border); margin: 1.6em 0; }
         ul.contains-task-list { list-style: none; padding-left: 1.2em; }
         .task-list-item input { margin-right: .5em; }
+        """;
+
+    // تخطيط القراءة (وضع العارض): سطر أضيق للقراءة المريحة وتنفّس أكبر وخط أكبر قليلاً.
+    private const string ReadingCss = """
+        body { padding: 40px 32px 96px; font-size: 16.5px; line-height: 1.75; }
+        .markdown-body { max-width: 760px; }
+        h1 { font-size: 2.1em; margin-top: .2em; }
+        p, li { letter-spacing: .002em; }
+        img { display: block; margin: 1.2em auto; }
         """;
 
     private const string LightCss = """

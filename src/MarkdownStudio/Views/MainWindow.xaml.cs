@@ -449,9 +449,9 @@ public partial class MainWindow
             Cmd("تصدير: PDF", () => OnExportPdf(this, new RoutedEventArgs())),
             Cmd("تصدير: Word (DOCX)", () => _vm.ExportDocxCommand.Execute(null)),
             Cmd("تصدير: نص عادي", () => _vm.ExportTextCommand.Execute(null)),
+            Cmd("عرض: تبديل عارض/محرّر", () => _vm.ToggleModeCommand.Execute(null)),
             Cmd("عرض: الوضع المرئي (استوديو WYSIWYG)", () => _vm.ToggleVisualModeCommand.Execute(null)),
             Cmd("عرض: وضع التركيز", () => _vm.ToggleFocusModeCommand.Execute(null)),
-            Cmd("عرض: وضع القراءة", () => _vm.ToggleReadingModeCommand.Execute(null)),
             Cmd("عرض: إظهار/إخفاء المستكشف", () => _vm.ToggleSidebarCommand.Execute(null)),
             Cmd("عرض: إظهار/إخفاء المعاينة", () => _vm.TogglePreviewPaneCommand.Execute(null)),
             Cmd("Markdown: إدراج جدول محتويات", () => _vm.InsertTocCommand.Execute(null)),
@@ -464,6 +464,7 @@ public partial class MainWindow
             Cmd("انتقال: إلى سطر…", () => GoToPanel.Show()),
             Cmd("انتقال: إلى رمز…", ShowSymbols),
             Cmd("ملف: فتح سريع…", ShowQuickOpen),
+            Cmd("Windows: اجعله الافتراضي لملفات Markdown", () => _vm.SetAsDefaultAppCommand.Execute(null)),
             Cmd("Windows: تسجيل تكامل النظام", () => _vm.RegisterWindowsIntegrationCommand.Execute(null)),
             Cmd("Windows: إلغاء تكامل النظام", () => _vm.UnregisterWindowsIntegrationCommand.Execute(null)),
             Cmd(Localizer.Instance["toolbar.whatsNew"], () => OnOpenWhatsNew(this, new RoutedEventArgs())),
@@ -532,9 +533,33 @@ public partial class MainWindow
         await Preview.EnsureCoreWebView2Async();
         _webViewReady = true;
         Preview.CoreWebView2.WebMessageReceived += OnPreviewWebMessage;
+        ApplyPanelLayout();            // يضبط الأعمدة على تخطيط الوضع الابتدائي (العارض)
         BindActiveDocument();          // يحمّل المستند الأولي
         PushPreview(_vm.PreviewHtml);
         UpdateFoldings();
+
+        _ = CheckForUpdatesAsync();    // فحص تحديثات بالخلفية (لا يعيق الإقلاع)
+    }
+
+    /// <summary>يفحص تحديثات GitHub بالخلفية؛ يعرض حواراً بالعودة والتشغيل عند توفّر إصدار جديد.</summary>
+    private async Task CheckForUpdatesAsync()
+    {
+        try
+        {
+            var updates = App.Services.GetRequiredService<IUpdateService>();
+            if (!updates.IsInstalled) return;   // نسخة تطوير: تخطَّ الفحص
+
+            await updates.CheckAsync(async version =>
+            {
+                var loc = Localizer.Instance;
+                var result = await ShowDialogAsync(
+                    loc["update.title"],
+                    loc.Format("update.body", version),
+                    primary: loc["update.restart"], secondary: null, close: loc["update.later"]);
+                return result == Wpf.Ui.Controls.MessageBoxResult.Primary;
+            });
+        }
+        catch { /* التحديث ليس حرجاً لعمل التطبيق */ }
     }
 
     // ===== ViewModel -> View =====

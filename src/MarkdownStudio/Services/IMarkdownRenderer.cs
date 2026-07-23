@@ -7,7 +7,8 @@ public interface IMarkdownRenderer
     string RenderFragment(string markdown);
 
     /// <summary>يبني صفحة HTML كاملة (مع CSS الخاص بالثيم) لعرضها في المعاينة.</summary>
-    string RenderDocument(string markdown, bool darkTheme, string? baseDirectory = null);
+    /// <param name="reading">تخطيط قراءة (عرض أضيق وتنفّس أكبر) لوضع العارض.</param>
+    string RenderDocument(string markdown, bool darkTheme, string? baseDirectory = null, bool reading = false);
 
     /// <summary>يبني صفحة HTML قابلة للتحرير المباشر (WYSIWYG) مع جسر أوامر إلى المضيف.</summary>
     string RenderEditable(string markdown, bool darkTheme, string? baseDirectory = null);

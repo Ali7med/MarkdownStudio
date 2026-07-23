@@ -14,6 +14,7 @@ public sealed class WindowsIntegrationService : IWindowsIntegrationService
 {
     private const string ProgId = "MarkdownStudio.Document";
     private const string AppName = "Markdown Studio";
+    private const string CapabilitiesPath = @"Software\MarkdownStudio\Capabilities";
     private static readonly string[] Extensions =
         { ".md", ".markdown", ".mdown", ".mkd", ".mkdn", ".mdtxt" };
 
@@ -81,6 +82,20 @@ public sealed class WindowsIntegrationService : IWindowsIntegrationService
             cmd.SetValue("", $"\"{_exePath}\" \"%1\"");
         }
 
+        // Capabilities + RegisteredApplications: يُظهر التطبيق في «التطبيقات الافتراضية» بويندوز،
+        // فيصبح قابلاً للتعيين افتراضياً لملفات Markdown من إعدادات النظام.
+        using (var cap = Registry.CurrentUser.CreateSubKey(CapabilitiesPath))
+        {
+            cap.SetValue("ApplicationName", AppName);
+            cap.SetValue("ApplicationDescription", "عارض ومحرّر Markdown");
+            using (var fa = cap.CreateSubKey("FileAssociations"))
+                foreach (var ext in Extensions) fa.SetValue(ext, ProgId);
+            using (var ua = cap.CreateSubKey("URLAssociations"))
+                ua.SetValue(UriProtocol.Scheme, ProgId);
+        }
+        using (var reg = Registry.CurrentUser.CreateSubKey(@"Software\RegisteredApplications"))
+            reg.SetValue(AppName, CapabilitiesPath);
+
         CreateSendToShortcut();
         NotifyShellChanged();
     }
@@ -105,6 +120,18 @@ public sealed class WindowsIntegrationService : IWindowsIntegrationService
         catch { /* WSH غير متاح: تجاهل */ }
     }
 
+    /// <summary>يفتح صفحة «التطبيقات الافتراضية» في إعدادات ويندوز لتأكيد تعيين البرنامج افتراضياً.</summary>
+    public void OpenDefaultAppsSettings()
+    {
+        try
+        {
+            // على ويندوز 11 يفتح مباشرة صفحة هذا التطبيق؛ على ويندوز 10 يفتح صفحة التطبيقات الافتراضية.
+            var target = $"ms-settings:defaultapps?registeredAppUser={Uri.EscapeDataString(AppName)}";
+            Process.Start(new ProcessStartInfo(target) { UseShellExecute = true });
+        }
+        catch { /* تعذّر فتح الإعدادات: تجاهل */ }
+    }
+
     public void AddToRecentDocs(string path)
     {
         try
@@ -126,6 +153,11 @@ public sealed class WindowsIntegrationService : IWindowsIntegrationService
 
         classes.DeleteSubKeyTree(ProgId, throwOnMissingSubKey: false);
         classes.DeleteSubKeyTree(UriProtocol.Scheme, throwOnMissingSubKey: false);
+
+        // إزالة Capabilities + RegisteredApplications.
+        Registry.CurrentUser.DeleteSubKeyTree(@"Software\MarkdownStudio", throwOnMissingSubKey: false);
+        using (var reg = Registry.CurrentUser.OpenSubKey(@"Software\RegisteredApplications", writable: true))
+            reg?.DeleteValue(AppName, throwOnMissingValue: false);
 
         foreach (var ext in Extensions)
         {

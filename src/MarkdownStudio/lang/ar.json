@@ -1,7 +1,7 @@
 {
   "meta": { "name": "العربية", "code": "ar", "direction": "rtl" },
   "strings": {
-    "app.subtitle": "بيئة توثيق متكاملة",
+    "app.subtitle": "عارض ومحرّر Markdown",
     "status.ready": "جاهز",
     "status.wordcount": "{0} كلمة · {1} حرف · {2} سطر · ~{3} د قراءة",
     "status.caret": "سطر {0}، عمود {1}",
@@ -36,11 +36,17 @@
     "status.winRegistered": "تم تسجيل تكامل Windows (ربط الملفات + قائمة السياق + البروتوكول)",
     "status.winPortable": "الوضع المحمول: تكامل Windows معطّل",
     "status.winUnregistered": "أُلغي تكامل Windows",
+    "status.setDefaultHint": "اختر Markdown Studio لملفات ‎.md في النافذة التي فُتِحت ثم أكّد",
     "status.quickOpenNeedsFolder": "افتح مجلداً أولاً للفتح السريع (Ctrl+P)",
     "status.noActiveDoc": "لا يوجد مستند نشط",
     "status.visualMode": "الوضع المرئي: حرّر مباشرة على المعاينة — يتولّد الكود تلقائياً",
     "status.codeMode": "وضع الكود",
+    "status.viewerMode": "وضع العرض — للقراءة",
+    "status.editorMode": "وضع التحرير",
 
+    "toolbar.edit": "تحرير",
+    "toolbar.view": "عرض",
+    "toolbar.explorer": "المستكشف",
     "toolbar.new": "جديد",
     "toolbar.open": "فتح",
     "toolbar.openFolder": "مجلد",
@@ -78,11 +84,13 @@
     "outline.title": "المخطّط",
 
     "welcome.title": "Markdown Studio",
-    "welcome.subtitle": "بيئة متكاملة لكتابة وإدارة التوثيق",
+    "welcome.subtitle": "افتح ملف Markdown لقراءته — وانتقل إلى المحرّر متى شئت",
     "welcome.newDoc": "مستند جديد",
     "welcome.openFile": "فتح ملف",
+    "welcome.openFolder": "فتح مجلد",
     "welcome.recent": "المفتوحة مؤخراً",
     "welcome.dragHint": "أو اسحب ملفات Markdown إلى هنا",
+    "welcome.setDefault": "اجعله الافتراضي لملفات Markdown",
 
     "tab.pin": "تثبيت / إلغاء التثبيت",
     "tab.close": "إغلاق",
@@ -107,6 +115,11 @@
     "whatsNew.section.new": "جديد",
     "whatsNew.section.improved": "تحسينات",
     "whatsNew.section.fixed": "إصلاحات",
-    "whatsNew.close": "حسناً"
+    "whatsNew.close": "حسناً",
+
+    "update.title": "يتوفّر تحديث",
+    "update.body": "الإصدار {0} جاهز. أعِد التشغيل الآن للتحديث؟",
+    "update.restart": "أعِد التشغيل وحدّث",
+    "update.later": "لاحقاً"
   }
 }

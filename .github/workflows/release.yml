@@ -1,0 +1,59 @@
+name: Release
+
+# Publishes a Velopack release whenever a version tag (v1.2.3) is pushed.
+# The app's in-app updater reads these GitHub Releases as its update feed.
+on:
+  push:
+    tags: [ 'v*' ]
+
+permissions:
+  contents: write        # required to create the GitHub Release and upload assets
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Derive version from tag
+        id: ver
+        shell: pwsh
+        run: |
+          $v = "${{ github.ref_name }}" -replace '^v',''
+          "version=$v" >> $env:GITHUB_OUTPUT
+
+      - name: Install vpk
+        run: dotnet tool install -g vpk --version 1.2.0
+
+      - name: Publish (self-contained win-x64)
+        run: >
+          dotnet publish src/MarkdownStudio/MarkdownStudio.csproj
+          -c Release -r win-x64 --self-contained true
+          -o publish /p:PublishSingleFile=false
+
+      - name: Pack (Velopack)
+        run: >
+          vpk pack
+          --packId MarkdownStudio
+          --packVersion ${{ steps.ver.outputs.version }}
+          --packDir publish
+          --mainExe MarkdownStudio.exe
+          --packTitle "Markdown Studio"
+          --packAuthors "ali7med"
+          --icon src/MarkdownStudio/Assets/appicon.ico
+          --outputDir Releases
+
+      - name: Upload to GitHub Releases
+        run: >
+          vpk upload github
+          --repoUrl https://github.com/Ali7med/MarkdownStudio
+          --publish
+          --releaseName "Markdown Studio ${{ steps.ver.outputs.version }}"
+          --tag ${{ github.ref_name }}
+          --token ${{ secrets.GITHUB_TOKEN }}
+          --outputDir Releases

@@ -1,7 +1,7 @@
 {
   "meta": { "name": "English", "code": "en", "direction": "ltr" },
   "strings": {
-    "app.subtitle": "Documentation IDE",
+    "app.subtitle": "Markdown viewer & editor",
     "status.ready": "Ready",
     "status.wordcount": "{0} words · {1} chars · {2} lines · ~{3} min read",
     "status.caret": "Ln {0}, Col {1}",
@@ -36,11 +36,17 @@
     "status.winRegistered": "Windows integration registered (file associations + context menu + protocol)",
     "status.winPortable": "Portable mode: Windows integration disabled",
     "status.winUnregistered": "Windows integration removed",
+    "status.setDefaultHint": "Choose Markdown Studio for .md in the window that opened, then confirm",
     "status.quickOpenNeedsFolder": "Open a folder first for Quick Open (Ctrl+P)",
     "status.noActiveDoc": "No active document",
     "status.visualMode": "Visual mode: edit directly on the preview — code is generated automatically",
     "status.codeMode": "Code mode",
+    "status.viewerMode": "Viewer mode — reading",
+    "status.editorMode": "Editor mode",
 
+    "toolbar.edit": "Edit",
+    "toolbar.view": "View",
+    "toolbar.explorer": "Explorer",
     "toolbar.new": "New",
     "toolbar.open": "Open",
     "toolbar.openFolder": "Folder",
@@ -78,11 +84,13 @@
     "outline.title": "Outline",
 
     "welcome.title": "Markdown Studio",
-    "welcome.subtitle": "An integrated environment for writing and managing documentation",
+    "welcome.subtitle": "Open a Markdown file to read it — switch to the editor whenever you like",
     "welcome.newDoc": "New document",
     "welcome.openFile": "Open file",
+    "welcome.openFolder": "Open folder",
     "welcome.recent": "Recently opened",
     "welcome.dragHint": "Or drag Markdown files here",
+    "welcome.setDefault": "Make it the default for Markdown files",
 
     "tab.pin": "Pin / unpin",
     "tab.close": "Close",
@@ -107,6 +115,11 @@
     "whatsNew.section.new": "New",
     "whatsNew.section.improved": "Improved",
     "whatsNew.section.fixed": "Fixed",
-    "whatsNew.close": "OK"
+    "whatsNew.close": "OK",
+
+    "update.title": "Update available",
+    "update.body": "Version {0} is ready. Restart now to update?",
+    "update.restart": "Restart & update",
+    "update.later": "Later"
   }
 }

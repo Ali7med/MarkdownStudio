@@ -32,6 +32,30 @@
 - كل بند سطر يبدأ بـ `- `. يدعم `**عريض**` بسيط.
 - الأحدث في الأعلى.
 
+## 3) نشر وتوزيع الإصدار (Velopack + GitHub Releases)
+
+بعد رفع الإصدار وتحديث CHANGELOG، يُنشَر المثبّت تلقائياً عبر GitHub Actions:
+
+1. **التزم** التغييرات على `main`.
+2. **أنشئ وسماً** مطابقاً للإصدار وادفعه (الريموت اسمه `base`):
+   ```bash
+   git tag v1.1.0
+   git push base v1.1.0
+   ```
+3. يعمل سير العمل [`.github/workflows/release.yml`](../.github/workflows/release.yml): يبني نسخة
+   self-contained (win-x64)، يغلّفها بـ Velopack، ويرفع `Setup.exe` وحِزم التحديث إلى
+   **GitHub Releases** للوسم — باستخدام `GITHUB_TOKEN` المدمج (لا أسرار تُخزَّن في المستودع).
+
+**تغليف محلي** (اختباراً بلا نشر): `powershell -ExecutionPolicy Bypass -File scripts/pack.ps1`
+→ المخرجات في `Releases/` (مُتجاهَل في git).
+
+**كيف يصل التحديث للمستخدمين:** عند الإقلاع يفحص التطبيق
+([`UpdateService`](../src/MarkdownStudio/Services/UpdateService.cs)) إصدارات GitHub؛ إن وُجد
+أحدث حمّله وعرض «أعِد التشغيل وحدّث». يعمل للنسخة المثبّتة فقط (لا لنسخة التطوير).
+
+> الوسم يجب أن يطابق `AppVersion.Current` مع بادئة `v` (مثل `v1.1.0`). عدم التطابق يُربك
+> مقارنة الإصدارات ولوحة «ما الجديد».
+
 ## القيود (ممنوعات)
 - ❌ كتابة رقم إصدار حرفياً خارج `AppVersion` (بما فيها `.csproj` — أُزيل منه عمداً).
 - ❌ كسر أنماط CHANGELOG (الترويسة/الأقسام/البنود).

@@ -45,7 +45,8 @@ public partial class MainWindowViewModel : ObservableObject
         _windows.UpdateJumpList(_recent.Files);
         Localization.Localizer.Instance.LanguageChanged += (_, _) => OnLanguageChanged();
 
-        NewDocument();
+        // يبدأ التطبيق في وضع العارض بلا مستند: تظهر شاشة الترحيب حتى يُفتح ملف.
+        ApplyLayoutFromModes();
     }
 
     private static string L(string key) => Localization.Localizer.Instance[key];
@@ -75,6 +76,20 @@ public partial class MainWindowViewModel : ObservableObject
         _windows.UnregisterIntegration();
         OnPropertyChanged(nameof(IsWindowsIntegrationRegistered));
         StatusText = L("status.winUnregistered");
+    }
+
+    /// <summary>يسجّل الربط (إن لزم) ثم يفتح إعدادات ويندوز لتعيين البرنامج افتراضياً لملفات Markdown.</summary>
+    [RelayCommand]
+    private void SetAsDefaultApp()
+    {
+        if (_windows.IsPortable) { StatusText = L("status.winPortable"); return; }
+        if (!_windows.IsRegistered)
+        {
+            _windows.RegisterIntegration();
+            OnPropertyChanged(nameof(IsWindowsIntegrationRegistered));
+        }
+        _windows.OpenDefaultAppsSettings();
+        StatusText = L("status.setDefaultHint");
     }
 
     /// <summary>يطلب من الـ View نقل المؤشّر إلى سطر معيّن وتركيز المحرّر.</summary>
@@ -131,26 +146,43 @@ public partial class MainWindowViewModel : ObservableObject
     /// <summary>إحصاء كلمات/أحرف/أسطر المستند النشط (لشريط الحالة).</summary>
     [ObservableProperty] private string _wordCountText = string.Empty;
 
-    /// <summary>وضع التركيز (إخفاء اللوحات الجانبية).</summary>
+    /// <summary>الوضع العام للتطبيق (عارض/محرّر). الافتراضي: عارض للقراءة.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsViewerMode))]
+    [NotifyPropertyChangedFor(nameof(IsEditorMode))]
+    private AppMode _mode = AppMode.Viewer;
+
+    public bool IsViewerMode => Mode == AppMode.Viewer;
+    public bool IsEditorMode => Mode == AppMode.Editor;
+
+    /// <summary>وضع التركيز داخل المحرّر (المحرّر فقط بلا مستكشف أو معاينة).</summary>
     [ObservableProperty] private bool _isFocusMode;
 
-    /// <summary>وضع القراءة (المعاينة فقط).</summary>
-    [ObservableProperty] private bool _isReadingMode;
-
-    // رؤية اللوحات (يقرأها الـ View لضبط الأعمدة).
-    [ObservableProperty] private bool _isSidebarVisible = true;
+    // رؤية اللوحات (يقرأها الـ View لضبط الأعمدة). الافتراضي = تخطيط العارض.
+    [ObservableProperty] private bool _isSidebarVisible;
     [ObservableProperty] private bool _isPreviewVisible = true;
-    [ObservableProperty] private bool _isEditorVisible = true;
+    [ObservableProperty] private bool _isEditorVisible;
 
     partial void OnIsFocusModeChanged(bool value) => ApplyLayoutFromModes();
-    partial void OnIsReadingModeChanged(bool value) => ApplyLayoutFromModes();
 
-    /// <summary>يشتقّ رؤية اللوحات من الأوضاع (تركيز/قراءة/عادي).</summary>
+    partial void OnModeChanged(AppMode value)
+    {
+        if (value == AppMode.Viewer)
+        {
+            if (IsVisualMode) IsVisualMode = false;   // لا تحرير مرئي في العارض
+            IsFocusMode = false;                       // التركيز مفهوم محرّر فقط
+        }
+        ApplyLayoutFromModes();
+        RefreshPreview();   // يعيد التنضيد بتخطيط القراءة المناسب للوضع
+        StatusText = value == AppMode.Viewer ? L("status.viewerMode") : L("status.editorMode");
+    }
+
+    /// <summary>يشتقّ رؤية اللوحات من الوضع العام ووضع التركيز.</summary>
     private void ApplyLayoutFromModes()
     {
-        if (IsFocusMode)      { IsSidebarVisible = false; IsEditorVisible = true;  IsPreviewVisible = false; }
-        else if (IsReadingMode){ IsSidebarVisible = false; IsEditorVisible = false; IsPreviewVisible = true;  }
-        else                  { IsSidebarVisible = true;  IsEditorVisible = true;  IsPreviewVisible = true;  }
+        if (Mode == AppMode.Viewer) { IsSidebarVisible = false; IsEditorVisible = false; IsPreviewVisible = true;  }
+        else if (IsFocusMode)       { IsSidebarVisible = false; IsEditorVisible = true;  IsPreviewVisible = false; }
+        else                        { IsSidebarVisible = true;  IsEditorVisible = true;  IsPreviewVisible = true;  }
     }
 
     /// <summary>مسار التنقّل للمستند النشط (نسبةً لمساحة العمل).</summary>
@@ -192,6 +224,7 @@ public partial class MainWindowViewModel : ObservableObject
             oldValue.PropertyChanged -= OnActiveDocPropertyChanged;
         if (newValue is not null)
             newValue.PropertyChanged += OnActiveDocPropertyChanged;
+        if (newValue is null) Mode = AppMode.Viewer;   // أُغلق آخر مستند → عُد للعارض
         _watcher.Watch(newValue?.FilePath);
         OnPropertyChanged(nameof(WelcomeVisibility));
         OnPropertyChanged(nameof(WorkspaceVisibility));
@@ -244,7 +277,8 @@ public partial class MainWindowViewModel : ObservableObject
         }
 
         var baseDir = ActiveDocument.FilePath is { } p ? Path.GetDirectoryName(p) : null;
-        PreviewHtml = _renderer.RenderDocument(ActiveDocument.Content, _theme.IsDark, baseDir);
+        PreviewHtml = _renderer.RenderDocument(
+            ActiveDocument.Content, _theme.IsDark, baseDir, reading: Mode == AppMode.Viewer);
     }
 
     // ---- Commands ----
@@ -255,6 +289,7 @@ public partial class MainWindowViewModel : ObservableObject
         var doc = new MarkdownDocument { Content = L("doc.newContent") };
         Documents.Add(doc);
         ActiveDocument = doc;
+        Mode = AppMode.Editor;   // مستند جديد = نيّة الكتابة → المحرّر
     }
 
     [RelayCommand]
@@ -530,10 +565,23 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void ToggleFocusMode() => IsFocusMode = !IsFocusMode;
+    private void ToggleFocusMode()
+    {
+        if (Mode != AppMode.Editor) return;   // التركيز داخل المحرّر فقط
+        IsFocusMode = !IsFocusMode;
+    }
 
+    /// <summary>يبدّل الوضع العام بين العارض والمحرّر.</summary>
     [RelayCommand]
-    private void ToggleReadingMode() => IsReadingMode = !IsReadingMode;
+    private void ToggleMode() => Mode = Mode == AppMode.Viewer ? AppMode.Editor : AppMode.Viewer;
+
+    /// <summary>يدخل وضع المحرّر (زر «تحرير»).</summary>
+    [RelayCommand]
+    private void EnterEditorMode() => Mode = AppMode.Editor;
+
+    /// <summary>يعود إلى وضع العارض (زر «عرض»).</summary>
+    [RelayCommand]
+    private void EnterViewerMode() => Mode = AppMode.Viewer;
 
     /// <summary>وضع التحرير المرئي (WYSIWYG): تحرير على المعاينة وتوليد الكود.</summary>
     [ObservableProperty] private bool _isVisualMode;

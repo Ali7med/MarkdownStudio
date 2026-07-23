@@ -15,6 +15,9 @@ public interface IWindowsIntegrationService
     /// <summary>يلغي كل التسجيلات ويعيد الحالة الافتراضية.</summary>
     void UnregisterIntegration();
 
+    /// <summary>يفتح صفحة «التطبيقات الافتراضية» بويندوز لتعيين البرنامج افتراضياً لملفات Markdown.</summary>
+    void OpenDefaultAppsSettings();
+
     /// <summary>يحدّث Jump List في شريط المهام بالملفات الأخيرة.</summary>
     void UpdateJumpList(IEnumerable<string> recentFiles);
 
