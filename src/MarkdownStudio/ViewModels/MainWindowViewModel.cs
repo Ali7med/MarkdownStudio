@@ -172,9 +172,53 @@ public partial class MainWindowViewModel : ObservableObject
             if (IsVisualMode) IsVisualMode = false;   // لا تحرير مرئي في العارض
             IsFocusMode = false;                       // التركيز مفهوم محرّر فقط
         }
+        else
+        {
+            _ = OpenContainingFolderAsync();           // افتح مجلد الملف الحالي في المستكشف
+        }
         ApplyLayoutFromModes();
         RefreshPreview();   // يعيد التنضيد بتخطيط القراءة المناسب للوضع
         StatusText = value == AppMode.Viewer ? L("status.viewerMode") : L("status.editorMode");
+    }
+
+    /// <summary>يفتح مجلد الملف النشط كمساحة عمل (إن لم يكن مفتوحاً) ويحدّد الملف في المستكشف.</summary>
+    private async Task OpenContainingFolderAsync()
+    {
+        if (ActiveDocument?.FilePath is not { } path) return;   // مستند جديد بلا مسار
+        var dir = Path.GetDirectoryName(path);
+        if (string.IsNullOrEmpty(dir)) return;
+
+        var underWorkspace = WorkspacePath is { } root
+            && path.StartsWith(root.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar,
+                               StringComparison.OrdinalIgnoreCase);
+        if (!underWorkspace)
+            await OpenFolderPathAsync(dir);
+
+        SelectInExplorer(path);
+    }
+
+    /// <summary>يحدّد عقدة الملف في شجرة المستكشف ويفتح مجلداتها الأبوية.</summary>
+    private void SelectInExplorer(string filePath)
+    {
+        if (FindFileNode(WorkspaceRoot, filePath) is { } node)
+            node.IsSelected = true;
+    }
+
+    private static FileSystemItem? FindFileNode(FileSystemItem? node, string filePath)
+    {
+        if (node is null) return null;
+        foreach (var child in node.Children)
+        {
+            if (!child.IsDirectory
+                && string.Equals(child.FullPath, filePath, StringComparison.OrdinalIgnoreCase))
+                return child;
+            if (child.IsDirectory && FindFileNode(child, filePath) is { } found)
+            {
+                child.IsExpanded = true;   // افتح المجلد الأب لإظهار الملف
+                return found;
+            }
+        }
+        return null;
     }
 
     /// <summary>يشتقّ رؤية اللوحات من الوضع العام ووضع التركيز.</summary>

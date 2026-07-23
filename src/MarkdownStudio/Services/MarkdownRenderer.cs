@@ -1,6 +1,8 @@
 using System.IO;
 using System.Text;
 using Markdig;
+using Markdig.Renderers;
+using Markdig.Renderers.Html;
 
 namespace MarkdownStudio.Services;
 
@@ -24,6 +26,22 @@ public sealed class MarkdownRenderer : IMarkdownRenderer
     public string RenderFragment(string markdown)
         => Markdown.ToHtml(markdown ?? string.Empty, _pipeline);
 
+    /// <summary>يصيّر HTML مع سمة <c>data-line</c> (رقم السطر المصدري 1-based) على كل كتلة عليا — لمزامنة التمرير.</summary>
+    private string RenderWithSourceLines(string markdown)
+    {
+        var doc = Markdown.Parse(markdown ?? string.Empty, _pipeline);
+        foreach (var block in doc)   // الكتل العليا فقط
+            if (block.Line >= 0)
+                block.GetAttributes().AddPropertyIfNotExist("data-line", (block.Line + 1).ToString());
+
+        using var sw = new StringWriter();
+        var renderer = new HtmlRenderer(sw);
+        _pipeline.Setup(renderer);
+        renderer.Render(doc);
+        sw.Flush();
+        return sw.ToString();
+    }
+
     /// <summary>رقم السطر (1-based) للكتلة العليا رقم <paramref name="blockIndex"/> — لمزامنة المؤشر.</summary>
     public int GetBlockLine(string markdown, int blockIndex)
     {
@@ -41,7 +59,8 @@ public sealed class MarkdownRenderer : IMarkdownRenderer
 
     private string Build(string markdown, bool darkTheme, string? baseDirectory, bool editable, bool reading)
     {
-        var body = RenderFragment(markdown);
+        // المعاينة العادية تحمل data-line لمزامنة التمرير؛ الوضع القابل للتحرير (WYSIWYG) لا.
+        var body = editable ? RenderFragment(markdown) : RenderWithSourceLines(markdown);
         var css = darkTheme ? DarkCss : LightCss;
         var baseTag = string.IsNullOrEmpty(baseDirectory)
             ? string.Empty
@@ -60,7 +79,7 @@ public sealed class MarkdownRenderer : IMarkdownRenderer
         sb.Append(body);
         sb.Append("</article>");
         // MathJax + Mermaid (تُعطَّل في وضع التحرير لتفادي إفساد الـ HTML القابل للتحويل).
-        if (!editable) sb.Append(Scripts);
+        if (!editable) { sb.Append(Scripts); sb.Append(ScrollSyncScript); }
         else sb.Append(EditableScript);
         sb.Append("</body></html>");
         return sb.ToString();
@@ -269,6 +288,66 @@ public sealed class MarkdownRenderer : IMarkdownRenderer
             });
             await m.default.run();
           } catch(e) { /* offline: تجاهل */ }
+        </script>
+        """;
+
+    // جسر مزامنة التمرير مع محرّر الكود: يستقبل {scrollToLine} فيمرّر المعاينة، ويرسل {type:'sync',line}
+    // عند تمرير المستخدم للمعاينة. يعتمد على سمات data-line المُضافة على الكتل.
+    private const string ScrollSyncScript = """
+        <script>
+        (function(){
+          var host = window.chrome && window.chrome.webview;
+          if (!host) return;
+          var ignore = false, raf = 0, map = [];
+          function rebuild(){
+            map = Array.prototype.map.call(document.querySelectorAll('[data-line]'), function(el){
+              var r = el.getBoundingClientRect();
+              return { line: parseInt(el.getAttribute('data-line'), 10) || 1, top: r.top + window.scrollY };
+            }).sort(function(a,b){ return a.line - b.line; });
+          }
+          function topForLine(line){
+            if (!map.length) return 0;
+            if (line <= map[0].line) return 0;
+            for (var i = 0; i < map.length - 1; i++){
+              var a = map[i], b = map[i+1];
+              if (line >= a.line && line < b.line){
+                var t = (line - a.line) / (b.line - a.line);
+                return a.top + (b.top - a.top) * t;
+              }
+            }
+            return map[map.length - 1].top;
+          }
+          function lineForTop(){
+            if (!map.length) return 1;
+            var y = window.scrollY, cur = map[0], idx = 0;
+            for (var i = 0; i < map.length; i++){ if (map[i].top <= y + 1){ cur = map[i]; idx = i; } else break; }
+            if (idx < map.length - 1){
+              var nx = map[idx+1], d = Math.max(1, nx.top - cur.top);
+              var t = Math.min(1, Math.max(0, (y - cur.top) / d));
+              return Math.round(cur.line + (nx.line - cur.line) * t);
+            }
+            return cur.line;
+          }
+          window.addEventListener('scroll', function(){
+            if (ignore) return;
+            cancelAnimationFrame(raf);
+            raf = requestAnimationFrame(function(){
+              host.postMessage(JSON.stringify({ type:'sync', line: lineForTop() }));
+            });
+          }, { passive: true });
+          host.addEventListener('message', function(e){
+            var m; try { m = JSON.parse(e.data); } catch(_){ return; }
+            if (m && typeof m.scrollToLine === 'number'){
+              rebuild();
+              ignore = true;
+              window.scrollTo(0, topForLine(m.scrollToLine));
+              setTimeout(function(){ ignore = false; }, 120);
+            }
+          });
+          window.addEventListener('resize', rebuild);
+          window.addEventListener('load', function(){ rebuild(); setTimeout(rebuild, 300); });
+          rebuild();
+        })();
         </script>
         """;
 }

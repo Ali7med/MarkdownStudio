@@ -62,6 +62,21 @@ public sealed class WindowsIntegrationService : IWindowsIntegrationService
             using (var extKey = classes.CreateSubKey($@"{ext}\OpenWithProgids"))
                 extKey.SetValue(ProgId, Array.Empty<byte>(), RegistryValueKind.None);
 
+        // تسجيل التطبيق تحت Applications: يجعله يظهر ضمن اقتراحات «الفتح باستخدام»
+        // لأنواع Markdown (عبر SupportedTypes) باسم ودود وأيقونة.
+        var appExe = Path.GetFileName(_exePath);
+        if (!string.IsNullOrEmpty(appExe))
+        {
+            using var app = classes.CreateSubKey($@"Applications\{appExe}");
+            app.SetValue("FriendlyAppName", AppName);
+            using (var icon = app.CreateSubKey("DefaultIcon"))
+                icon.SetValue("", $"\"{_exePath}\",0");
+            using (var cmd = app.CreateSubKey(@"shell\open\command"))
+                cmd.SetValue("", $"\"{_exePath}\" \"%1\"");
+            using (var st = app.CreateSubKey("SupportedTypes"))
+                foreach (var ext in Extensions) st.SetValue(ext, string.Empty);
+        }
+
         // قائمة سياق لملفات Markdown عموماً (SystemFileAssociations).
         foreach (var ext in Extensions)
             using (var shell = classes.CreateSubKey(
@@ -158,6 +173,11 @@ public sealed class WindowsIntegrationService : IWindowsIntegrationService
         Registry.CurrentUser.DeleteSubKeyTree(@"Software\MarkdownStudio", throwOnMissingSubKey: false);
         using (var reg = Registry.CurrentUser.OpenSubKey(@"Software\RegisteredApplications", writable: true))
             reg?.DeleteValue(AppName, throwOnMissingValue: false);
+
+        // إزالة تسجيل Applications.
+        var appExe = Path.GetFileName(_exePath);
+        if (!string.IsNullOrEmpty(appExe))
+            classes.DeleteSubKeyTree($@"Applications\{appExe}", throwOnMissingSubKey: false);
 
         foreach (var ext in Extensions)
         {

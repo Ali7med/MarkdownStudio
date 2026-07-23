@@ -22,6 +22,7 @@ public partial class MainWindow
     private MarkdownDocument? _boundDocument;
     private bool _suppressEditorSync;
     private bool _webViewReady;
+    private bool _syncingFromPreview;   // حارس ضد حلقة المزامنة (معاينة → محرّر)
 
     public MainWindow(MainWindowViewModel vm)
     {
@@ -60,6 +61,7 @@ public partial class MainWindow
             async (path, line) => { await _vm.OpenPathAsync(path); JumpToLine(line); });
         Editor.TextChanged += OnEditorTextChanged;
         Editor.TextArea.Caret.PositionChanged += OnCaretPositionChanged;
+        Editor.TextArea.TextView.ScrollOffsetChanged += OnEditorScrollChanged;   // مزامنة تمرير المحرّر → المعاينة
 
         PreviewKeyDown += OnWindowPreviewKeyDown;
         Loaded += OnLoaded;
@@ -533,6 +535,7 @@ public partial class MainWindow
         await Preview.EnsureCoreWebView2Async();
         _webViewReady = true;
         Preview.CoreWebView2.WebMessageReceived += OnPreviewWebMessage;
+        Preview.NavigationCompleted += OnPreviewNavigationCompleted;   // يعيد ضبط موضع المعاينة بعد كل إعادة تصيير
         ApplyPanelLayout();            // يضبط الأعمدة على تخطيط الوضع الابتدائي (العارض)
         BindActiveDocument();          // يحمّل المستند الأولي
         PushPreview(_vm.PreviewHtml);
@@ -667,7 +670,6 @@ public partial class MainWindow
 
     private void OnPreviewWebMessage(object? sender, Microsoft.Web.WebView2.Core.CoreWebView2WebMessageReceivedEventArgs e)
     {
-        if (!_vm.IsVisualMode) return;
         string json;
         try { json = e.TryGetWebMessageAsString(); } catch { return; }
         if (string.IsNullOrEmpty(json)) return;
@@ -676,17 +678,69 @@ public partial class MainWindow
         {
             using var doc = System.Text.Json.JsonDocument.Parse(json);
             if (!doc.RootElement.TryGetProperty("type", out var t)) return;
-            switch (t.GetString())
+            var type = t.GetString();
+
+            if (_vm.IsVisualMode)
             {
-                case "html" when doc.RootElement.TryGetProperty("html", out var h):
-                    _vm.ApplyVisualEdit(h.GetString() ?? string.Empty);
-                    break;
-                case "caret" when doc.RootElement.TryGetProperty("blockIndex", out var b):
-                    HighlightCodeLine(_vm.BlockLineFromVisual(b.GetInt32()));
-                    break;
+                switch (type)
+                {
+                    case "html" when doc.RootElement.TryGetProperty("html", out var h):
+                        _vm.ApplyVisualEdit(h.GetString() ?? string.Empty);
+                        break;
+                    case "caret" when doc.RootElement.TryGetProperty("blockIndex", out var b):
+                        HighlightCodeLine(_vm.BlockLineFromVisual(b.GetInt32()));
+                        break;
+                }
+            }
+            else if (type == "sync" && _vm.IsEditorMode
+                     && doc.RootElement.TryGetProperty("line", out var l))
+            {
+                SyncEditorToLine(l.GetInt32());   // تمرير المعاينة → محرّر الكود
             }
         }
         catch { /* رسالة غير متوقّعة: تجاهل */ }
+    }
+
+    // ===== مزامنة التمرير: محرّر ↔ معاينة =====
+
+    /// <summary>تمرير المحرّر → المعاينة: يرسل أعلى سطر مرئي.</summary>
+    private void OnEditorScrollChanged(object? sender, EventArgs e)
+    {
+        if (_syncingFromPreview || !_webViewReady || _vm.IsVisualMode || !_vm.IsEditorMode) return;
+        SendPreviewScrollToLine(FirstVisibleEditorLine());
+    }
+
+    /// <summary>بعد إعادة تصيير المعاينة (تغيّر المحتوى) يعيد ضبط موضعها على موضع المحرّر — لتفادي القفز للأعلى.</summary>
+    private void OnPreviewNavigationCompleted(object? sender, Microsoft.Web.WebView2.Core.CoreWebView2NavigationCompletedEventArgs e)
+    {
+        if (!_webViewReady || _vm.IsVisualMode || !_vm.IsEditorMode) return;
+        SendPreviewScrollToLine(FirstVisibleEditorLine());
+    }
+
+    private int FirstVisibleEditorLine()
+    {
+        var view = Editor.TextArea.TextView;
+        return view.VisualLinesValid && view.VisualLines.Count > 0
+            ? view.VisualLines[0].FirstDocumentLine.LineNumber
+            : 1;
+    }
+
+    private void SendPreviewScrollToLine(int line)
+    {
+        if (_webViewReady && Preview.CoreWebView2 is { } core)
+            core.PostWebMessageAsString($"{{\"scrollToLine\":{line}}}");
+    }
+
+    /// <summary>تمرير المعاينة → المحرّر: يمرّر المحرّر للسطر المقابل (بلا تحريك المؤشّر) مع حارس ضد الحلقة.</summary>
+    private void SyncEditorToLine(int line)
+    {
+        if (Editor.Document is null) return;
+        line = Math.Clamp(line, 1, Editor.Document.LineCount);
+        _syncingFromPreview = true;
+        var top = Editor.TextArea.TextView.GetVisualTopByDocumentLine(line);
+        Editor.ScrollToVerticalOffset(top);
+        Dispatcher.BeginInvoke(new Action(() => _syncingFromPreview = false),
+            System.Windows.Threading.DispatcherPriority.Background);
     }
 
     /// <summary>يمرّر ويُظلّل سطر الكود المقابل لموضع المؤشّر المرئي (بلا سرقة التركيز).</summary>
@@ -758,6 +812,9 @@ public partial class MainWindow
     {
         var caret = Editor.TextArea.Caret;
         CaretStatus.Text = Localizer.Instance.Format("status.caret", caret.Line, caret.Column);
+        // الوقوف على سطر → حرّك المعاينة لنفس السطر.
+        if (_webViewReady && !_vm.IsVisualMode && _vm.IsEditorMode && !_syncingFromPreview)
+            SendPreviewScrollToLine(caret.Line);
     }
 
     // ===== PDF Export (WebView2 خارج الشاشة) =====
