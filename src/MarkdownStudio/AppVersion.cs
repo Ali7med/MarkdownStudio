@@ -7,8 +7,8 @@ namespace MarkdownStudio;
 public static class AppVersion
 {
     /// <summary>الإصدار الحالي (SemVer: MAJOR.MINOR.PATCH).</summary>
-    public const string Current = "1.0.0";
+    public const string Current = "1.1.0";
 
     /// <summary>تاريخ الإصدار الحالي (ISO 8601: YYYY-MM-DD).</summary>
-    public const string ReleasedDate = "2026-07-18";
+    public const string ReleasedDate = "2026-07-23";
 }
